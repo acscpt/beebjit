@@ -1,3 +1,15 @@
+Fork notes
+==========
+
+This is a minimal fork of scarybeasts/beebjit
+(https://github.com/scarybeasts/beebjit) adding a -log-stderr flag so
+diagnostic output can be separated from emulated terminal output when
+running with -terminal -headless.
+
+Upstream is tracked and periodically merged. Licence unchanged (GPLv3).
+
+----
+
 Welcome to beebjit!
 I'm Chris Evans <scarybeasts@gmail.com>. Any and all feedback / suggestions very
 welcome. Please don't be shy!
