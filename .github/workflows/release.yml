@@ -1,0 +1,131 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (must already exist on origin)"
+        required: true
+
+jobs:
+  smoke-test:
+    name: Build and test on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libpulse-dev
+
+      - name: Build and run all tests
+        run: ./build.sh
+
+  build-linux:
+    name: Build Linux release binaries
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libpulse-dev
+
+      - name: Build Linux GUI binary
+        run: |
+          ./build_opt.sh
+          mv beebjit beebjit-linux-x86_64
+
+      - name: Build Linux headless binary
+        run: |
+          ./build_headless_opt.sh
+          mv beebjit beebjit-headless-linux-x86_64
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: |
+            beebjit-linux-x86_64
+            beebjit-headless-linux-x86_64
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows release binaries
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Install mingw-w64 cross-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: Build Windows GUI binary
+        run: |
+          ./build_win_opt.sh
+          mv beebjit.exe beebjit-windows-x86_64.exe
+
+      - name: Build Windows headless binary
+        run: |
+          ./build_headless_win_opt.sh
+          mv beebjit-headless.exe beebjit-headless-windows-x86_64.exe
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: |
+            beebjit-windows-x86_64.exe
+            beebjit-headless-windows-x86_64.exe
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-binaries
+          path: ./artifacts/
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+          path: ./artifacts/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release create "${TAG_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${TAG_NAME}" \
+            --generate-notes \
+            ./artifacts/beebjit-linux-x86_64 \
+            ./artifacts/beebjit-headless-linux-x86_64 \
+            ./artifacts/beebjit-windows-x86_64.exe \
+            ./artifacts/beebjit-headless-windows-x86_64.exe
