@@ -2,11 +2,21 @@ Fork notes
 ==========
 
 This is a minimal fork of scarybeasts/beebjit
-(https://github.com/scarybeasts/beebjit) adding a -log-stderr flag so
-diagnostic output can be separated from emulated terminal output when
-running with -terminal -headless.
+(https://github.com/scarybeasts/beebjit) adding small quality-of-life
+changes for headless and automation use:
 
-Upstream is tracked and periodically merged. Licence unchanged (GPLv3).
+- -log-stderr flag separating diagnostic output from emulated terminal
+  output when running with -terminal -headless.
+
+- Windows headless build (build_headless_win_opt.sh) producing a
+  GUI-free beebjit-headless.exe via the same BEEBJIT_HEADLESS define
+  already used on Linux/macOS.
+  
+- Linux mmap address-band fix mirroring upstream's Windows fix to avoid
+  intermittent startup failures.
+
+See FORK-CHANGES.md for the dated list. Upstream is tracked and
+periodically merged. Licence unchanged (GPLv3).
 
 ----
 
