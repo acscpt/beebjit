@@ -15,6 +15,10 @@ changes for headless and automation use:
 - Linux mmap address-band fix mirroring upstream's Windows fix to avoid
   intermittent startup failures.
 
+- -headless-render flag and savescreen debug command for programmatic
+  screen capture from headless automation harnesses (BGRA buffer
+  allocation plus on-demand framebuffer dump).
+
 See FORK-CHANGES.md for the dated list. Upstream is tracked and
 periodically merged. Licence unchanged (GPLv3).
 

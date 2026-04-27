@@ -12,3 +12,11 @@
   backends for the existing null stubs. New `build_headless_win_opt.sh`
   script. Includes a small prerequisite fix to `os_time_windows.c`
   making its dependency on `log.h` explicit.
+
+- **2026-04-27**: Add headless screen capture support. New
+  `-headless-render` flag allocates the render buffer in headless mode
+  (otherwise skipped as an optimisation), and a new `savescreen <f>`
+  debug command writes the BGRA framebuffer to a file. Together they
+  enable programmatic screen capture from automation harnesses without
+  requiring GUI mode. Functional tests added asserting headless render
+  output is pixel-identical to GUI rendering.
