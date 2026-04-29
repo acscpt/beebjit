@@ -9,6 +9,22 @@ echo 'Checking Nightshade protection.'
     -headless -fast -accurate -debug \
     -commands 'breakat 1000000;c;writem 03e0 43 48 2e 22 42 2e 4e 49 47 48 54 53 48 22 0d;writem 02e1 ef;b e00;c;q'
 
+echo 'Checking loaddisc runtime mount.'
+# Same Nightshade scenario as above, but the disc is mounted at runtime
+# via the loaddisc debug command instead of via -0 at startup.
+./beebjit \
+    -mode jit \
+    -headless -fast -accurate -debug \
+    -commands 'loaddisc 0 test/misc/protection.ssd;breakat 1000000;c;writem 03e0 43 48 2e 22 42 2e 4e 49 47 48 54 53 48 22 0d;writem 02e1 ef;b e00;c;q'
+
+echo 'Checking loaddisc bad path is non-fatal.'
+# A missing file passed to loaddisc should print an error and leave the
+# emulator usable, not bail. The trailing q must still exit cleanly.
+./beebjit \
+    -mode jit \
+    -headless -fast -accurate -debug \
+    -commands 'loaddisc 0 /no/such/file.ssd;q'
+
 echo 'Checking E00 DFS ROM in sideways RAM.'
 # This uses raster-c.ssd for convenience because it has a !BOOT and cleanly
 # executes at $1900 if it loads correctly.

@@ -17,6 +17,8 @@ enum {
 /* TODO: these do_convert_* options should be separate function calls, not
  * flags to the constructor.
  */
+int disc_is_known_extension(const char* p_file_name);
+
 struct disc_struct* disc_create(const char* p_filename,
                                 int is_writeable,
                                 int is_mutable,
