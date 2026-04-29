@@ -19,6 +19,10 @@ changes for headless and automation use:
   screen capture from headless automation harnesses (BGRA buffer
   allocation plus on-demand framebuffer dump).
 
+- loaddisc debug command for runtime disc image mounting; a debugger
+  or automation harness can swap discs in and out of drives 0 or 1
+  without restarting the emulator.
+
 See FORK-CHANGES.md for the dated list. Upstream is tracked and
 periodically merged. Licence unchanged (GPLv3).
 
