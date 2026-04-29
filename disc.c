@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 Heisenberg (acscpt) - shared disc_is_known_extension */
 #include "disc.h"
 
 #include "bbc_options.h"
@@ -167,6 +168,20 @@ disc_do_convert(struct disc_struct* p_disc,
   }
 }
 
+int
+disc_is_known_extension(const char* p_file_name) {
+  return (util_is_extension(p_file_name, "ssd") ||
+          util_is_extension(p_file_name, "dsd") ||
+          util_is_extension(p_file_name, "adl") ||
+          util_is_extension(p_file_name, "fsd") ||
+          util_is_extension(p_file_name, "log") ||
+          util_is_extension(p_file_name, "rfi") ||
+          util_is_extension(p_file_name, "raw") ||
+          util_is_extension(p_file_name, "scp") ||
+          util_is_extension(p_file_name, "dfi") ||
+          util_is_extension(p_file_name, "hfe"));
+}
+
 struct disc_struct*
 disc_create(const char* p_file_name,
             int is_writeable,
@@ -182,8 +197,13 @@ disc_create(const char* p_file_name,
   int do_extract_files;
   int do_check_for_crc_errors = 0;
   char* p_rev_spec = NULL;
+  struct disc_struct* p_disc;
 
-  struct disc_struct* p_disc = util_mallocz(sizeof(struct disc_struct));
+  if (!disc_is_known_extension(p_file_name)) {
+    util_bail("unknown disc filename extension");
+  }
+
+  p_disc = util_mallocz(sizeof(struct disc_struct));
 
   p_disc->log_protection = util_has_option(p_options->p_log_flags,
                                            "disc:protection");
@@ -249,8 +269,6 @@ disc_create(const char* p_file_name,
   } else if (util_is_extension(p_file_name, "hfe")) {
     p_disc->is_hfe = 1;
     p_disc->p_write_track_callback = disc_hfe_write_track;
-  } else {
-    util_bail("unknown disc filename extension");
   }
 
   if (is_mutable && (p_disc->p_write_track_callback == NULL)) {

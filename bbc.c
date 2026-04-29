@@ -3206,26 +3206,13 @@ bbc_load_disc_runtime(struct bbc_struct* p_bbc,
   struct disc_struct* p_disc;
   struct util_file* p_probe_file;
   uint32_t new_disc_index;
-  int extension_known;
 
   if ((drive < 0) || (drive > 1)) {
     log_do_log(k_log_disc, k_log_warning,
                "loaddisc: bad drive %d", drive);
     return 0;
   }
-
-  /* Mirrors the extension list in disc_create() in disc.c; keep in sync. */
-  extension_known = (util_is_extension(p_filename, "ssd") ||
-                     util_is_extension(p_filename, "dsd") ||
-                     util_is_extension(p_filename, "adl") ||
-                     util_is_extension(p_filename, "fsd") ||
-                     util_is_extension(p_filename, "log") ||
-                     util_is_extension(p_filename, "rfi") ||
-                     util_is_extension(p_filename, "raw") ||
-                     util_is_extension(p_filename, "scp") ||
-                     util_is_extension(p_filename, "dfi") ||
-                     util_is_extension(p_filename, "hfe"));
-  if (!extension_known) {
+  if (!disc_is_known_extension(p_filename)) {
     log_do_log(k_log_disc, k_log_warning,
                "loaddisc: unknown disc filename extension: %s", p_filename);
     return 0;
