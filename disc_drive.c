@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 Heisenberg (acscpt) - runtime disc load support */
 #include "disc_drive.h"
 
 #include "bbc_options.h"
@@ -279,6 +280,16 @@ disc_drive_add_disc(struct disc_drive_struct* p_drive,
   p_drive->discs_added++;
 }
 
+int
+disc_drive_can_add_disc(struct disc_drive_struct* p_drive) {
+  return (p_drive->discs_added < k_disc_max_discs_per_drive);
+}
+
+uint32_t
+disc_drive_get_discs_added(struct disc_drive_struct* p_drive) {
+  return p_drive->discs_added;
+}
+
 static double
 disc_drive_get_position_fraction(struct disc_drive_struct* p_drive) {
   uint32_t track_length = disc_drive_get_track_length(p_drive);
@@ -311,6 +322,41 @@ disc_drive_cycle_disc(struct disc_drive_struct* p_drive) {
   } else {
     disc_index++;
   }
+
+  p_drive->disc_index = disc_index;
+  p_disc = p_drive->p_discs[disc_index];
+  if (p_disc == NULL) {
+    p_file_name = "<none>";
+  } else {
+    p_file_name = disc_get_file_name(p_disc);
+  }
+
+  log_do_log(k_log_disc,
+             k_log_info,
+             "drive %d file now: %s",
+             p_drive->id,
+             p_file_name);
+
+  disc_drive_set_position_fraction(p_drive, fraction);
+}
+
+void
+disc_drive_select_disc(struct disc_drive_struct* p_drive,
+                       uint32_t disc_index) {
+  /* NOTE: like disc_drive_cycle_disc, this swap is instantaneous. A real
+   * drive would assert drive-not-ready, lose index sync and land at an
+   * arbitrary new rotational angle. Head position fraction is preserved
+   * so any in-flight FDC byte stream resumes cleanly against the new disc.
+   */
+  struct disc_struct* p_disc;
+  const char* p_file_name;
+  double fraction;
+
+  if (disc_index > p_drive->discs_added) {
+    util_bail("disc drive select index out of range");
+  }
+
+  fraction = disc_drive_get_position_fraction(p_drive);
 
   p_drive->disc_index = disc_index;
   p_disc = p_drive->p_discs[disc_index];
