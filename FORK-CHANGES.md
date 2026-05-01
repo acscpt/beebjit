@@ -39,3 +39,12 @@
   fragments. Switched to the comma form already used in
   `build_headless_win_opt.sh` so the cross-compiled Windows GUI builds
   work again.
+
+- **2026-05-01**: Convert disc-format dispatch in `disc.c` to an
+  enum-driven switch. The `disc_is_known_extension` boolean from the
+  loaddisc work is replaced by a `disc_get_format` helper that returns
+  an `enum disc_format`, and `disc_create`'s string-based if/else
+  ladder becomes a switch with a `default:` bail. The supported-format
+  list now lives in one place; adding a new format is one enum entry
+  plus one switch case, and forgetting the case fails loudly rather
+  than leaving `p_disc` with no format flag set.
