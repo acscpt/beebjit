@@ -3212,7 +3212,7 @@ bbc_load_disc_runtime(struct bbc_struct* p_bbc,
                "loaddisc: bad drive %d", drive);
     return 0;
   }
-  if (!disc_is_known_extension(p_filename)) {
+  if (disc_get_format(p_filename) == k_disc_format_unknown) {
     log_do_log(k_log_disc, k_log_warning,
                "loaddisc: unknown disc filename extension: %s", p_filename);
     return 0;
