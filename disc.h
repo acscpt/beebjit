@@ -17,7 +17,21 @@ enum {
 /* TODO: these do_convert_* options should be separate function calls, not
  * flags to the constructor.
  */
-int disc_is_known_extension(const char* p_file_name);
+enum disc_format {
+  k_disc_format_unknown = 0,
+  k_disc_format_ssd,
+  k_disc_format_dsd,
+  k_disc_format_adl,
+  k_disc_format_fsd,
+  k_disc_format_log,
+  k_disc_format_rfi,
+  k_disc_format_raw,
+  k_disc_format_scp,
+  k_disc_format_dfi,
+  k_disc_format_hfe,
+};
+
+enum disc_format disc_get_format(const char* p_file_name);
 
 struct disc_struct* disc_create(const char* p_filename,
                                 int is_writeable,

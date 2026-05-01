@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 Heisenberg (acscpt) - shared disc_is_known_extension */
+/* Copyright (c) 2026 Heisenberg (acscpt) - runtime disc load support */
 #include "disc.h"
 
 #include "bbc_options.h"
@@ -168,18 +168,19 @@ disc_do_convert(struct disc_struct* p_disc,
   }
 }
 
-int
-disc_is_known_extension(const char* p_file_name) {
-  return (util_is_extension(p_file_name, "ssd") ||
-          util_is_extension(p_file_name, "dsd") ||
-          util_is_extension(p_file_name, "adl") ||
-          util_is_extension(p_file_name, "fsd") ||
-          util_is_extension(p_file_name, "log") ||
-          util_is_extension(p_file_name, "rfi") ||
-          util_is_extension(p_file_name, "raw") ||
-          util_is_extension(p_file_name, "scp") ||
-          util_is_extension(p_file_name, "dfi") ||
-          util_is_extension(p_file_name, "hfe"));
+enum disc_format
+disc_get_format(const char* p_file_name) {
+  if (util_is_extension(p_file_name, "ssd")) return k_disc_format_ssd;
+  if (util_is_extension(p_file_name, "dsd")) return k_disc_format_dsd;
+  if (util_is_extension(p_file_name, "adl")) return k_disc_format_adl;
+  if (util_is_extension(p_file_name, "fsd")) return k_disc_format_fsd;
+  if (util_is_extension(p_file_name, "log")) return k_disc_format_log;
+  if (util_is_extension(p_file_name, "rfi")) return k_disc_format_rfi;
+  if (util_is_extension(p_file_name, "raw")) return k_disc_format_raw;
+  if (util_is_extension(p_file_name, "scp")) return k_disc_format_scp;
+  if (util_is_extension(p_file_name, "dfi")) return k_disc_format_dfi;
+  if (util_is_extension(p_file_name, "hfe")) return k_disc_format_hfe;
+  return k_disc_format_unknown;
 }
 
 struct disc_struct*
@@ -198,8 +199,10 @@ disc_create(const char* p_file_name,
   int do_check_for_crc_errors = 0;
   char* p_rev_spec = NULL;
   struct disc_struct* p_disc;
+  enum disc_format format;
 
-  if (!disc_is_known_extension(p_file_name)) {
+  format = disc_get_format(p_file_name);
+  if (format == k_disc_format_unknown) {
     util_bail("unknown disc filename extension");
   }
 
@@ -245,30 +248,46 @@ disc_create(const char* p_file_name,
   p_disc->tracks_used = 0;
   p_disc->is_double_sided = 0;
 
-  if (util_is_extension(p_file_name, "ssd")) {
+  switch (format) {
+  case k_disc_format_ssd:
     p_disc->is_ssd = 1;
     p_disc->p_write_track_callback = disc_ssd_write_track;
-  } else if (util_is_extension(p_file_name, "dsd")) {
+    break;
+  case k_disc_format_dsd:
     p_disc->is_dsd = 1;
     p_disc->p_write_track_callback = disc_ssd_write_track;
-  } else if (util_is_extension(p_file_name, "adl")) {
+    break;
+  case k_disc_format_adl:
     p_disc->is_adl = 1;
     p_disc->p_write_track_callback = disc_adl_write_track;
-  } else if (util_is_extension(p_file_name, "fsd")) {
+    break;
+  case k_disc_format_fsd:
     p_disc->is_fsd = 1;
-  } else if (util_is_extension(p_file_name, "log")) {
+    break;
+  case k_disc_format_log:
     p_disc->is_log = 1;
-  } else if (util_is_extension(p_file_name, "rfi")) {
+    break;
+  case k_disc_format_rfi:
     p_disc->is_rfi = 1;
-  } else if (util_is_extension(p_file_name, "raw")) {
+    break;
+  case k_disc_format_raw:
     p_disc->is_raw = 1;
-  } else if (util_is_extension(p_file_name, "scp")) {
+    break;
+  case k_disc_format_scp:
     p_disc->is_scp = 1;
-  } else if (util_is_extension(p_file_name, "dfi")) {
+    break;
+  case k_disc_format_dfi:
     p_disc->is_dfi = 1;
-  } else if (util_is_extension(p_file_name, "hfe")) {
+    break;
+  case k_disc_format_hfe:
     p_disc->is_hfe = 1;
     p_disc->p_write_track_callback = disc_hfe_write_track;
+    break;
+  default:
+    /* Catches k_disc_format_unknown (already guarded above) and any future
+     * enum addition that forgets to extend this switch.
+     */
+    util_bail("disc_create: unhandled disc format");
   }
 
   if (is_mutable && (p_disc->p_write_track_callback == NULL)) {
