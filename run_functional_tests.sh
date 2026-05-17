@@ -25,6 +25,20 @@ echo 'Checking loaddisc bad path is non-fatal.'
     -headless -fast -accurate -debug \
     -commands 'loaddisc 0 /no/such/file.ssd;q'
 
+echo 'Checking bmw memory-write breakpoint with auto-commands.'
+# Sets a memory-write breakpoint over the MODE 7 framebuffer with an
+# auto-command of q on hit. The MOS startup paints the boot banner into
+# this region within the first few hundred thousand cycles, so the bmw
+# must fire and trigger a clean exit. The breakat is a backstop: if the
+# bmw never fires, breakat halts at 5M cycles, leaves an empty
+# pending-commands queue, and beebjit exits non-zero on the EOF stdin
+# read. Exercises the bmw range form, the commands modifier, and the
+# auto-command append-to-pending behaviour together.
+./beebjit \
+    -mode jit \
+    -headless -fast -accurate -debug \
+    -commands "breakat 5000000;bmw 7c00 7fff commands 'q';c"
+
 echo 'Checking E00 DFS ROM in sideways RAM.'
 # This uses raster-c.ssd for convenience because it has a !BOOT and cleanly
 # executes at $1900 if it loads correctly.
