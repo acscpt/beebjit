@@ -20,3 +20,31 @@
   enable programmatic screen capture from automation harnesses without
   requiring GUI mode. Functional tests added asserting headless render
   output is pixel-identical to GUI rendering.
+
+- **2026-04-29**: Add `loaddisc` debug command for runtime disc image
+  mounting. `loaddisc <d> <f> [w] [m]` swaps a disc image into drive 0
+  or 1 from the debugger prompt without restarting the emulator, with
+  optional flags for cutting the write-protect notch (`w`) and flushing
+  in-memory changes back to the host file (`m`). Pre-checks drive
+  number, file readability, extension and free slot so a typo at the
+  prompt does not bail the emulator. Also extracts a shared
+  `disc_is_known_extension()` helper so the supported-extension list
+  lives in one place (used by both `disc_create()` and the runtime
+  loader). Functional tests cover both the runtime mount path and the
+  non-fatal-error contract.
+
+- **2026-04-29**: Fix `--image-base` linker flag in `build_win_opt.sh`
+  and `build_win_dbg.sh`. `mingw-gcc` was treating `0x00400000` as a
+  source file because of a space rather than a comma between option
+  fragments. Switched to the comma form already used in
+  `build_headless_win_opt.sh` so the cross-compiled Windows GUI builds
+  work again.
+
+- **2026-05-01**: Convert disc-format dispatch in `disc.c` to an
+  enum-driven switch. The `disc_is_known_extension` boolean from the
+  loaddisc work is replaced by a `disc_get_format` helper that returns
+  an `enum disc_format`, and `disc_create`'s string-based if/else
+  ladder becomes a switch with a `default:` bail. The supported-format
+  list now lives in one place; adding a new format is one enum entry
+  plus one switch case, and forgetting the case fails loudly rather
+  than leaving `p_disc` with no format flag set.

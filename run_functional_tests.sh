@@ -9,6 +9,36 @@ echo 'Checking Nightshade protection.'
     -headless -fast -accurate -debug \
     -commands 'breakat 1000000;c;writem 03e0 43 48 2e 22 42 2e 4e 49 47 48 54 53 48 22 0d;writem 02e1 ef;b e00;c;q'
 
+echo 'Checking loaddisc runtime mount.'
+# Same Nightshade scenario as above, but the disc is mounted at runtime
+# via the loaddisc debug command instead of via -0 at startup.
+./beebjit \
+    -mode jit \
+    -headless -fast -accurate -debug \
+    -commands 'loaddisc 0 test/misc/protection.ssd;breakat 1000000;c;writem 03e0 43 48 2e 22 42 2e 4e 49 47 48 54 53 48 22 0d;writem 02e1 ef;b e00;c;q'
+
+echo 'Checking loaddisc bad path is non-fatal.'
+# A missing file passed to loaddisc should print an error and leave the
+# emulator usable, not bail. The trailing q must still exit cleanly.
+./beebjit \
+    -mode jit \
+    -headless -fast -accurate -debug \
+    -commands 'loaddisc 0 /no/such/file.ssd;q'
+
+echo 'Checking bmw memory-write breakpoint with auto-commands.'
+# Sets a memory-write breakpoint over the MODE 7 framebuffer with an
+# auto-command of q on hit. The MOS startup paints the boot banner into
+# this region within the first few hundred thousand cycles, so the bmw
+# must fire and trigger a clean exit. The breakat is a backstop: if the
+# bmw never fires, breakat halts at 5M cycles, leaves an empty
+# pending-commands queue, and beebjit exits non-zero on the EOF stdin
+# read. Exercises the bmw range form, the commands modifier, and the
+# auto-command append-to-pending behaviour together.
+./beebjit \
+    -mode jit \
+    -headless -fast -accurate -debug \
+    -commands "breakat 5000000;bmw 7c00 7fff commands 'q';c"
+
 echo 'Checking E00 DFS ROM in sideways RAM.'
 # This uses raster-c.ssd for convenience because it has a !BOOT and cleanly
 # executes at $1900 if it loads correctly.

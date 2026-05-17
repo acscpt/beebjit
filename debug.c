@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 Heisenberg (acscpt) - loaddisc support */
 #include "debug.h"
 
 #include "bbc.h"
@@ -1150,6 +1151,47 @@ debug_save_screen(struct debug_struct* p_debug, const char* p_file_name) {
                 render_get_height(p_render),
                 size,
                 p_file_name);
+}
+
+static void
+debug_loaddisc(struct debug_struct* p_debug,
+               int drive,
+               const char* p_file_name,
+               struct util_string_list_struct* p_command_strings,
+               uint32_t num_strings) {
+  struct bbc_struct* p_bbc = p_debug->p_bbc;
+  int is_writeable = 0;
+  int is_mutable = 0;
+  int rc;
+  uint32_t i_arg;
+
+  for (i_arg = 3; i_arg < num_strings; ++i_arg) {
+    const char* p_flag_str =
+        util_string_list_get_string(p_command_strings, i_arg);
+    if (!strcmp(p_flag_str, "w")) {
+      is_writeable = 1;
+    } else if (!strcmp(p_flag_str, "m")) {
+      is_mutable = 1;
+    } else {
+      (void) printf("loaddisc: unknown flag '%s'\n", p_flag_str);
+      return;
+    }
+  }
+  if (is_mutable && !is_writeable) {
+    (void) printf("loaddisc: 'm' requires 'w'\n");
+    return;
+  }
+
+  rc = bbc_load_disc_runtime(p_bbc,
+                             p_file_name,
+                             drive,
+                             is_writeable,
+                             is_mutable);
+  if (rc) {
+    (void) printf("loaddisc: drive %d loaded with %s\n", drive, p_file_name);
+  } else {
+    (void) printf("loaddisc: failed (see log) for %s\n", p_file_name);
+  }
 }
 
 static void
@@ -2390,6 +2432,15 @@ debug_callback_common(struct debug_struct* p_debug,
       debug_save_raw(p_debug, p_param_1_str, parse_hex_int2, parse_hex_int3);
     } else if (!strcmp(p_command, "savescreen") && (p_param_1_str != NULL)) {
       debug_save_screen(p_debug, p_param_1_str);
+    } else if (!strcmp(p_command, "loaddisc") &&
+               (num_strings >= 3) &&
+               (parse_int >= 0) &&
+               (parse_int <= 1)) {
+      debug_loaddisc(p_debug,
+                     parse_int,
+                     p_param_2_str,
+                     p_command_strings,
+                     num_strings);
     } else if (!strcmp(p_command, "ss")) {
       state_save(p_bbc, p_param_1_str);
     } else if (!strcmp(p_command, "d")) {
@@ -2560,6 +2611,8 @@ debug_callback_common(struct debug_struct* p_debug,
   "loadmem <f> <a>    : load memory to <a> from raw file <f>\n"
   "savemem <f> <a> <l>: save memory from <a>, length <l> to raw file <f>\n"
   "savescreen <f>     : save render buffer to raw BGRA file <f>\n"
+  "loaddisc <d> <f> [w] [m]: load disc image <f> into drive <d> (0 or 1);\n"
+  "                          w = writeable, m = mutable host file\n"
   "sys                : show system VIA registers\n"
   "user               : show user VIA registers\n"
   "r                  : show regular registers\n"

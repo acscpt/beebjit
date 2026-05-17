@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 Heisenberg (acscpt) - runtime disc load support */
 #include "bbc.h"
 
 #include "adc.h"
@@ -3190,6 +3191,81 @@ bbc_add_raw_disc(struct bbc_struct* p_bbc,
   }
 
   disc_drive_add_disc(p_bbc->p_drive_0, p_disc);
+}
+
+int
+bbc_load_disc_runtime(struct bbc_struct* p_bbc,
+                      const char* p_filename,
+                      int drive,
+                      int is_writeable,
+                      int is_mutable) {
+  /* Runtime equivalent of bbc_add_disc plus slot-select, callable after
+   * BBC init. See bbc_add_disc for the startup path.
+   */
+  struct disc_drive_struct* p_drive;
+  struct disc_struct* p_disc;
+  struct util_file* p_probe_file;
+  uint32_t new_disc_index;
+
+  if ((drive < 0) || (drive > 1)) {
+    log_do_log(k_log_disc, k_log_warning,
+               "loaddisc: bad drive %d", drive);
+    return 0;
+  }
+  if (disc_get_format(p_filename) == k_disc_format_unknown) {
+    log_do_log(k_log_disc, k_log_warning,
+               "loaddisc: unknown disc filename extension: %s", p_filename);
+    return 0;
+  }
+
+  /* disc_load() bails if it cannot open the file; pre-check here so a
+   * runtime typo doesn't terminate the emulator.
+   */
+  p_probe_file = util_file_try_read_open(p_filename);
+  if (p_probe_file == NULL) {
+    log_do_log(k_log_disc, k_log_warning,
+               "loaddisc: cannot read file: %s", p_filename);
+    return 0;
+  }
+  util_file_close(p_probe_file);
+
+  if (drive == 0) {
+    p_drive = p_bbc->p_drive_0;
+  } else {
+    p_drive = p_bbc->p_drive_1;
+  }
+  /* Pre-check the slot count; disc_drive_add_disc bails when the drive's
+   * 4 slots are full.
+   */
+  if (!disc_drive_can_add_disc(p_drive)) {
+    log_do_log(k_log_disc, k_log_warning,
+               "loaddisc: drive %d has no free disc slot", drive);
+    return 0;
+  }
+
+  p_disc = disc_create(p_filename,
+                       is_writeable,
+                       is_mutable,
+                       0,
+                       0,
+                       0,
+                       &p_bbc->options);
+  if (p_disc == NULL) {
+    log_do_log(k_log_disc, k_log_warning,
+               "loaddisc: disc_create failed for %s", p_filename);
+    return 0;
+  }
+
+  new_disc_index = disc_drive_get_discs_added(p_drive);
+  disc_drive_add_disc(p_drive, p_disc);
+  /* The startup path defers disc_load to disc_drive_power_on_reset, which
+   * has already run by the time we get here. Load explicitly so the disc
+   * surface is populated before the FDC next reads.
+   */
+  disc_load(p_disc);
+  disc_drive_select_disc(p_drive, new_disc_index);
+
+  return 1;
 }
 
 void

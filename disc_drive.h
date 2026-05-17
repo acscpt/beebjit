@@ -28,6 +28,10 @@ void disc_drive_power_on_reset(struct disc_drive_struct* p_drive);
 void disc_drive_add_disc(struct disc_drive_struct* p_drive,
                          struct disc_struct* p_disc);
 void disc_drive_cycle_disc(struct disc_drive_struct* p_drive);
+void disc_drive_select_disc(struct disc_drive_struct* p_drive,
+                            uint32_t disc_index);
+int disc_drive_can_add_disc(struct disc_drive_struct* p_drive);
+uint32_t disc_drive_get_discs_added(struct disc_drive_struct* p_drive);
 
 struct disc_struct* disc_drive_get_disc(struct disc_drive_struct* p_drive);
 int disc_drive_is_spinning(struct disc_drive_struct* p_drive);
